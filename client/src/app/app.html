@@ -1,0 +1,118 @@
+<div class="app-container" [class.has-feedback]="ratingFeedback()">
+  <!-- Rating feedback overlay -->
+  @if (ratingFeedback()) {
+    <div class="rating-feedback" [attr.data-rating]="ratingFeedback()">
+      <span class="feedback-emoji">{{ ratingEmojis[ratingFeedback()!] }}</span>
+      <span class="feedback-text">{{ ratingFeedback() }}</span>
+    </div>
+  }
+
+  <!-- Header -->
+  <header class="header">
+    <img src="banner.png" alt="BeatARator" class="header-logo">
+    <button class="stats-toggle" (click)="toggleStats()">
+      {{ remainingCount() }} left
+    </button>
+  </header>
+
+  <!-- Stats panel -->
+  @if (showStats() && stats()) {
+    <div class="stats-panel">
+      <div class="stat-row">
+        <span class="stat-label">📥 Inbox</span>
+        <span class="stat-value">{{ stats()!.inbox }}</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">👎 Bad</span>
+        <span class="stat-value">{{ stats()!.Bad }}</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">😐 OK</span>
+        <span class="stat-value">{{ stats()!.OK }}</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">👍 Good</span>
+        <span class="stat-value">{{ stats()!.Good }}</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">🔥 Real Good</span>
+        <span class="stat-value">{{ stats()!['Real Good'] }}</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">💥 Banger</span>
+        <span class="stat-value">{{ stats()!.Banger }}</span>
+      </div>
+    </div>
+  }
+
+  <!-- Main content -->
+  <main class="main">
+    @if (isLoading()) {
+      <div class="loading">Loading tracks...</div>
+    } @else if (!currentTrack()) {
+      <div class="empty-state">
+        <div class="empty-icon">🎵</div>
+        <p>No tracks in inbox</p>
+        <p class="empty-hint">Drop audio files into the inbox folder</p>
+        <button class="refresh-btn" (click)="loadTracks()">Refresh</button>
+      </div>
+    } @else {
+      <!-- Track info -->
+      <div class="track-info">
+        <div class="track-name">{{ trackName() }}</div>
+        <div class="track-meta">{{ formatSize(currentTrack()!.size) }}</div>
+      </div>
+
+      <!-- Audio element (hidden) -->
+      <audio
+        #audioPlayer
+        [src]="streamUrl()"
+        (timeupdate)="onTimeUpdate($event)"
+        (ended)="onEnded()"
+        preload="auto"
+      ></audio>
+
+      <!-- Progress bar -->
+      <div class="progress-container" (click)="seek($event)">
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="progress()"></div>
+        </div>
+        <div class="time-display">
+          <span>{{ formatTime(currentTime()) }}</span>
+          <span>{{ formatTime(duration()) }}</span>
+        </div>
+      </div>
+
+      <!-- Playback controls -->
+      <div class="playback-controls">
+        <button class="ctrl-btn loop-btn" [class.active]="loopMode()" (click)="toggleLoop()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </button>
+        <button class="ctrl-btn back-btn" [class.disabled]="currentIndex() === 0" (click)="back()">⏮</button>
+        <button class="stop-btn" (click)="stop()">⏹</button>
+        <button class="play-btn" (click)="togglePlay()">
+          {{ isPlaying() ? '⏸' : '▶' }}
+        </button>
+        <button class="ctrl-btn skip-btn" (click)="skip()">⏭</button>
+      </div>
+
+      <!-- Rating buttons -->
+      <div class="rating-buttons">
+        @for (r of ratings; track r) {
+          <button
+            class="rating-btn"
+            [class.disabled]="isRating()"
+            [attr.data-rating]="r"
+            (click)="rate(r)"
+          >
+            <span class="rating-emoji">{{ ratingEmojis[r] }}</span>
+            <span class="rating-label">{{ r }}</span>
+          </button>
+        }
+      </div>
+
+      <!-- Info message -->
+      <div class="info-message">Rated tracks are removed from the playlist</div>
+    }
+  </main>
+</div>

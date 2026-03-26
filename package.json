@@ -1,0 +1,12 @@
+{
+  "name": "beat-a-rater",
+  "version": "1.0.0",
+  "description": "Audio file sorting app - listen and rate beats from anywhere",
+  "scripts": {
+    "start:server": "cd server && node server.js",
+    "start:client": "cd client && ng serve --open",
+    "dev": "cd server && node server.js",
+    "build": "cd client && ng build",
+    "start": "cd server && node server.js"
+  }
+}
