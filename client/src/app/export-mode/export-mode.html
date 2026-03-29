@@ -23,13 +23,44 @@
 
     <!-- Idle state -->
     @if (exportState() === 'idle') {
-      <button class="export-btn" (click)="startExport()">
-        📤 Export All Rated Tracks to 192kbps
-      </button>
-      <p class="export-note">
-        This will process every track in Bad, OK, Good, Real Good, and Banger folders.
-        Existing files in <code>audio/export/</code> will be overwritten.
-      </p>
+      <div class="idle-section">
+        <div class="track-summary">
+          @if (stats()) {
+            <div class="summary-row"><span>👎 Bad</span><span>{{ stats()!.Bad }}</span></div>
+            <div class="summary-row"><span>😐 OK</span><span>{{ stats()!.OK }}</span></div>
+            <div class="summary-row"><span>👍 Good</span><span>{{ stats()!.Good }}</span></div>
+            <div class="summary-row"><span>🔥 Real Good</span><span>{{ stats()!['Real Good'] }}</span></div>
+            <div class="summary-row"><span>💥 Banger</span><span>{{ stats()!.Banger }}</span></div>
+            <div class="summary-row total"><span>Total tracks</span><span>{{ totalTracksToExport() }}</span></div>
+          }
+        </div>
+        <p class="export-note">
+          Output: <code>audio/export/</code> — originals never touched.
+        </p>
+        <button class="export-btn" (click)="requestExport()">
+          📤 Export All Rated Tracks to 192kbps
+        </button>
+      </div>
+    }
+
+    <!-- Confirm state -->
+    @if (exportState() === 'confirm') {
+      <div class="confirm-section">
+        <div class="confirm-icon">⚠️</div>
+        <h3 class="confirm-title">Are you sure?</h3>
+        <p class="confirm-body">
+          This will convert <strong>{{ totalTracksToExport() }} tracks</strong> to 192kbps
+          and save them to <code>audio/export/</code>.
+        </p>
+        <p class="confirm-body">
+          Your originals in <code>audio/rated/</code> will <strong>not be touched</strong>.
+          Any existing files in <code>audio/export/</code> will be overwritten.
+        </p>
+        <div class="confirm-actions">
+          <button class="cancel-btn" (click)="cancelConfirm()">✕ Cancel</button>
+          <button class="confirm-btn" (click)="confirmAndStart()">✓ Yes, start export</button>
+        </div>
+      </div>
     }
 
     <!-- Running state -->

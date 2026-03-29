@@ -1,6 +1,6 @@
 import { Component, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ApiService, ExportStatus } from '../api.service';
+import { ApiService, ExportStatus, Stats } from '../api.service';
 
 @Component({
   selector: 'app-export-mode',
@@ -9,15 +9,23 @@ import { ApiService, ExportStatus } from '../api.service';
   styleUrl: './export-mode.scss'
 })
 export class ExportMode implements OnInit, OnDestroy {
-  ffmpegAvailable = signal<boolean | null>(null); // null = checking
+  ffmpegAvailable = signal<boolean | null>(null);
   status = signal<ExportStatus | null>(null);
-  exportState = signal<'idle' | 'running' | 'done' | 'error'>('idle');
+  exportState = signal<'idle' | 'confirm' | 'running' | 'done' | 'error'>('idle');
+  stats = signal<Stats | null>(null);
+
+  totalTracksToExport = () => {
+    const s = this.stats();
+    if (!s) return 0;
+    return s.Bad + s.OK + s.Good + (s['Real Good'] ?? 0) + s.Banger;
+  };
 
   private pollInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(private api: ApiService) {}
 
   ngOnInit() {
+    this.api.getStats().subscribe({ next: (s) => this.stats.set(s) });
     this.api.checkFfmpeg().subscribe({
       next: (res) => {
         this.ffmpegAvailable.set(res.available);
@@ -45,7 +53,15 @@ export class ExportMode implements OnInit, OnDestroy {
     this.stopPolling();
   }
 
-  startExport() {
+  requestExport() {
+    this.exportState.set('confirm');
+  }
+
+  cancelConfirm() {
+    this.exportState.set('idle');
+  }
+
+  confirmAndStart() {
     if (this.exportState() === 'running') return;
     this.exportState.set('running');
     this.status.set(null);
