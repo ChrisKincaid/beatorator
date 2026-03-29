@@ -91,15 +91,18 @@
           <!-- Image picker -->
           <div class="art-picker-section">
             <div class="art-picker-label">Choose album art:</div>
-            <div class="art-picker-scroll">
+            <div class="art-picker-list">
               @for (img of availableImages(); track img) {
                 <button
-                  class="art-thumb-btn"
+                  class="art-list-item"
                   [class.selected]="effectiveArtFile() === img"
                   (click)="pickArt(img)"
-                  [title]="img"
                 >
-                  <img [src]="'/api/images/' + img" [alt]="img" class="art-thumb" />
+                  <img [src]="api.getImageUrl(img)" [alt]="img" class="art-list-thumb" />
+                  <span class="art-list-name">{{ img }}</span>
+                  @if (effectiveArtFile() === img) {
+                    <span class="art-list-check">✓</span>
+                  }
                 </button>
               }
             </div>

@@ -58,7 +58,7 @@ export class TagMode implements OnInit {
     return this.tracks().filter(t => !this.taggedFiles().includes(t.filename)).length;
   });
 
-  constructor(private api: ApiService) {}
+  constructor(public api: ApiService) {}
 
   ngOnInit() {
     this.loadStats();
