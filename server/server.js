@@ -393,6 +393,31 @@ app.get('/api/images/:filename', (req, res) => {
   res.sendFile(filePath);
 });
 
+// GET /api/rated/:rating/tracks/:filename/embedded-art - Serve art currently embedded in the MP3
+app.get('/api/rated/:rating/tracks/:filename/embedded-art', (req, res) => {
+  const { rating, filename } = req.params;
+  if (!VALID_RATINGS.includes(rating)) return res.status(400).json({ error: 'Invalid rating' });
+  if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    return res.status(400).json({ error: 'Invalid filename' });
+  }
+  const filePath = path.join(RATED_DIR, rating, filename);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
+
+  try {
+    const tags = NodeID3.read(filePath);
+    const img = tags.image;
+    if (img && img.imageBuffer && img.imageBuffer.length > 0) {
+      res.set('Content-Type', img.mime || 'image/jpeg');
+      res.set('Cache-Control', 'no-cache');
+      res.send(img.imageBuffer);
+    } else {
+      res.status(404).json({ error: 'No embedded art' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to read art' });
+  }
+});
+
 // GET /api/rated/:rating/tracks/:filename/metadata - Read metadata + find album art
 app.get('/api/rated/:rating/tracks/:filename/metadata', (req, res) => {
   const { rating, filename } = req.params;

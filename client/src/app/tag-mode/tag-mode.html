@@ -71,22 +71,37 @@
         <div class="editor-content">
 
           <!-- Album art section -->
-          <div class="art-section">
-            <img [src]="albumArtUrl()" alt="Album Art" class="art-preview" />
-            <div class="art-info">
-              @if (selectedArtFilename()) {
-                <span class="art-override">✓ Custom: {{ selectedArtFilename() }}</span>
-                <button class="art-clear-btn" (click)="clearArtOverride()">✕ Clear override</button>
-              } @else if (metadata()!.albumArt) {
-                <span class="art-found">✓ Auto: {{ metadata()!.albumArt }}</span>
-              } @else {
-                <span class="art-missing">No match — using default</span>
-              }
+          <div class="art-compare">
+            <!-- Left: what is currently embedded in the file -->
+            <div class="art-panel">
+              <div class="art-panel-label">In file now</div>
               @if (metadata()!.current.hasEmbeddedArt) {
-                <span class="art-embedded">✓ Art embedded in file</span>
+                <img [src]="embeddedArtUrl()" alt="Embedded art" class="art-preview" />
+                <span class="art-status embedded">✓ Embedded</span>
+              } @else {
+                <div class="art-preview art-none">None</div>
+                <span class="art-status missing">No art in file</span>
+              }
+            </div>
+            <!-- Right: what will be written on save -->
+            <div class="art-panel">
+              <div class="art-panel-label">Will be saved as</div>
+              <img [src]="albumArtUrl()" alt="New art" class="art-preview" />
+              @if (selectedArtFilename()) {
+                <span class="art-status override">✓ Custom pick</span>
+              } @else if (metadata()!.albumArt) {
+                <span class="art-status found">✓ Auto-matched</span>
+              } @else {
+                <span class="art-status default">Default art</span>
               }
             </div>
           </div>
+          @if (metadata()!.current.hasEmbeddedArt) {
+            <p class="art-advice">File already has embedded art. Uncheck "Embed art" below to leave it as-is.</p>
+          }
+          @if (selectedArtFilename()) {
+            <button class="art-clear-btn" (click)="clearArtOverride()">✕ Clear art override</button>
+          }
 
           <!-- Image picker -->
           <div class="art-picker-section">

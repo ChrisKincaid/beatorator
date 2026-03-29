@@ -199,44 +199,67 @@
   gap: 16px;
 }
 
-// Album art
-.art-section {
+// Album art two-panel compare
+.art-compare {
   display: flex;
-  gap: 14px;
-  align-items: flex-start;
+  gap: 12px;
+}
+
+.art-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.art-panel-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #666;
+  align-self: flex-start;
 }
 
 .art-preview {
-  width: 100px;
-  height: 100px;
+  width: 100%;
+  aspect-ratio: 1;
   border-radius: 10px;
   object-fit: cover;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: #1a1a2e;
+
+  &.art-none {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #555;
+    border-style: dashed;
+  }
 }
 
-.art-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  padding-top: 4px;
+.art-status {
+  font-size: 11px;
+  font-weight: 600;
+  align-self: flex-start;
 
-  .art-found {
-    color: #22c55e;
-  }
+  &.embedded { color: #667eea; }
+  &.missing   { color: #555; }
+  &.override  { color: #a855f7; }
+  &.found     { color: #22c55e; }
+  &.default   { color: #f59e0b; }
+}
 
-  .art-override {
-    color: #a855f7;
-  }
-
-  .art-missing {
-    color: #f59e0b;
-  }
-
-  .art-embedded {
-    color: #667eea;
-  }
+.art-advice {
+  font-size: 11px;
+  color: #667eea;
+  margin: 0;
+  line-height: 1.4;
+  background: rgba(102, 126, 234, 0.08);
+  border-radius: 6px;
+  padding: 6px 10px;
 }
 
 .art-clear-btn {

@@ -52,6 +52,15 @@ export class TagMode implements OnInit {
     return artFile ? this.api.getImageUrl(artFile) : '';
   });
 
+  // URL for art currently embedded inside the MP3 file itself
+  embeddedArtUrl = computed(() => {
+    const meta = this.metadata();
+    const track = this.selectedTrack();
+    const rating = this.selectedRating();
+    if (!meta?.current.hasEmbeddedArt || !track || !rating) return '';
+    return this.api.getEmbeddedArtUrl(rating, track.filename);
+  });
+
   taggedCount = computed(() => this.taggedFiles().length);
 
   untaggedCount = computed(() => {

@@ -136,6 +136,10 @@ export class ApiService {
     return this.http.get<string[]>(`${this.baseUrl}/rated/${encodeURIComponent(rating)}/tagged`);
   }
 
+  getEmbeddedArtUrl(rating: string, filename: string): string {
+    return `${this.baseUrl}/rated/${encodeURIComponent(rating)}/tracks/${encodeURIComponent(filename)}/embedded-art`;
+  }
+
   getImages(): Observable<string[]> {
     return this.http.get<string[]>(`${this.baseUrl}/images`);
   }
