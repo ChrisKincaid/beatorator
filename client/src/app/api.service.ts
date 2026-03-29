@@ -24,6 +24,51 @@ export interface Stats {
   Banger: number;
 }
 
+export interface TrackMetadata {
+  current: {
+    artist: string;
+    title: string;
+    album: string;
+    year: string;
+    genre: string;
+    trackNumber: string;
+    composer: string;
+    publisher: string;
+    comment: string;
+    radioStationUrl: string;
+    hasEmbeddedArt: boolean;
+  };
+  suggested: {
+    artist: string;
+    title: string;
+    album: string;
+    year: string;
+    genre: string;
+    trackNumber: string;
+    composer: string;
+    publisher: string;
+    comment: string;
+    radioStationUrl: string;
+  };
+  albumArt: string | null;
+  defaultArt: string;
+}
+
+export interface MetadataSaveRequest {
+  artist: string;
+  title: string;
+  album: string;
+  year: string;
+  genre: string;
+  trackNumber: string;
+  composer: string;
+  publisher: string;
+  comment: string;
+  radioStationUrl: string;
+  embedArt: boolean;
+  artFilename: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private baseUrl = '/api';
@@ -62,5 +107,30 @@ export class ApiService {
 
   getStats(): Observable<Stats> {
     return this.http.get<Stats>(`${this.baseUrl}/stats`);
+  }
+
+  getTrackMetadata(rating: string, filename: string): Observable<TrackMetadata> {
+    return this.http.get<TrackMetadata>(
+      `${this.baseUrl}/rated/${encodeURIComponent(rating)}/tracks/${encodeURIComponent(filename)}/metadata`
+    );
+  }
+
+  saveTrackMetadata(rating: string, filename: string, data: MetadataSaveRequest): Observable<{ success: boolean; tagged: number }> {
+    return this.http.post<{ success: boolean; tagged: number }>(
+      `${this.baseUrl}/rated/${encodeURIComponent(rating)}/tracks/${encodeURIComponent(filename)}/metadata`,
+      data
+    );
+  }
+
+  getTaggedManifest(rating: string): Observable<string[]> {
+    return this.http.get<string[]>(`${this.baseUrl}/rated/${encodeURIComponent(rating)}/tagged`);
+  }
+
+  getImages(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.baseUrl}/images`);
+  }
+
+  getImageUrl(filename: string): string {
+    return `${this.baseUrl}/images/${encodeURIComponent(filename)}`;
   }
 }

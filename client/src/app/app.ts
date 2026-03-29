@@ -1,14 +1,16 @@
 import { Component, signal, computed, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService, Track, Stats } from './api.service';
+import { TagMode } from './tag-mode/tag-mode';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule],
+  imports: [CommonModule, TagMode],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
 export class App implements OnInit {
+  appMode = signal<'sort' | 'tag'>('sort');
   tracks = signal<Track[]>([]);
   currentIndex = signal(0);
   stats = signal<Stats | null>(null);
@@ -69,6 +71,17 @@ export class App implements OnInit {
 
   ngOnInit() {
     this.loadTracks();
+  }
+
+  switchMode(mode: 'sort' | 'tag') {
+    if (mode === 'tag') {
+      const audio = this.audioRef?.nativeElement;
+      if (audio) {
+        audio.pause();
+        this.isPlaying.set(false);
+      }
+    }
+    this.appMode.set(mode);
   }
 
   loadTracks() {

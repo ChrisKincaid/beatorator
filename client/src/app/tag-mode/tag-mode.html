@@ -1,0 +1,186 @@
+<div class="tag-container">
+  <!-- No rating selected: show category picker -->
+  @if (!selectedRating()) {
+    <div class="category-picker">
+      <h2 class="section-title">Tag Mode</h2>
+      <p class="section-hint">Pick a category to tag</p>
+      <div class="category-grid">
+        @for (r of ratings; track r) {
+          <button class="category-btn" [attr.data-rating]="r" (click)="selectRating(r)">
+            <span class="cat-emoji">{{ ratingEmojis[r] }}</span>
+            <span class="cat-label">{{ r }}</span>
+            <span class="cat-count">{{ getRatingCount(r) }} tracks</span>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Rating selected but no track selected: show track list -->
+  @else if (!selectedTrack()) {
+    <div class="track-list-view">
+      <div class="list-header">
+        <button class="back-btn" (click)="goBack()">← Back</button>
+        <h2 class="section-title">{{ ratingEmojis[selectedRating()!] }} {{ selectedRating() }}</h2>
+        <div class="tag-progress">
+          <span class="tagged-count">{{ taggedCount() }} tagged</span>
+          <span class="divider">·</span>
+          <span class="untagged-count">{{ untaggedCount() }} remaining</span>
+        </div>
+      </div>
+
+      @if (isLoading()) {
+        <div class="loading">Loading tracks...</div>
+      } @else if (tracks().length === 0) {
+        <div class="empty-state">No tracks in this category</div>
+      } @else {
+        <div class="quick-actions">
+          <button class="start-untagged-btn" (click)="advanceToNextUntagged()">
+            Start with next untagged →
+          </button>
+        </div>
+        <div class="track-list">
+          @for (track of tracks(); track track.filename) {
+            <button
+              class="track-item"
+              [class.tagged]="isTagged(track.filename)"
+              (click)="selectTrack(track)"
+            >
+              <span class="track-status">{{ isTagged(track.filename) ? '✓' : '○' }}</span>
+              <span class="track-filename">{{ track.filename }}</span>
+            </button>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Track selected: show metadata editor -->
+  @else {
+    <div class="editor-view">
+      <div class="editor-header">
+        <button class="back-btn" (click)="goBack()">← Back to list</button>
+        @if (saveMessage()) {
+          <div class="save-message" [class.error]="saveMessage() === 'Error saving!'">{{ saveMessage() }}</div>
+        }
+      </div>
+
+      @if (isLoading()) {
+        <div class="loading">Loading metadata...</div>
+      } @else if (metadata()) {
+        <div class="editor-content">
+
+          <!-- Album art section -->
+          <div class="art-section">
+            <img [src]="albumArtUrl()" alt="Album Art" class="art-preview" />
+            <div class="art-info">
+              @if (selectedArtFilename()) {
+                <span class="art-override">✓ Custom: {{ selectedArtFilename() }}</span>
+                <button class="art-clear-btn" (click)="clearArtOverride()">✕ Clear override</button>
+              } @else if (metadata()!.albumArt) {
+                <span class="art-found">✓ Auto: {{ metadata()!.albumArt }}</span>
+              } @else {
+                <span class="art-missing">No match — using default</span>
+              }
+              @if (metadata()!.current.hasEmbeddedArt) {
+                <span class="art-embedded">✓ Art embedded in file</span>
+              }
+            </div>
+          </div>
+
+          <!-- Image picker -->
+          <div class="art-picker-section">
+            <div class="art-picker-label">Choose album art:</div>
+            <div class="art-picker-scroll">
+              @for (img of availableImages(); track img) {
+                <button
+                  class="art-thumb-btn"
+                  [class.selected]="effectiveArtFile() === img"
+                  (click)="pickArt(img)"
+                  [title]="img"
+                >
+                  <img [src]="'/api/images/' + img" [alt]="img" class="art-thumb" />
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="embed-toggle">
+            <label>
+              <input type="checkbox" [ngModel]="embedArt()" (ngModelChange)="embedArt.set($event)" />
+              Embed selected art in file
+            </label>
+          </div>
+
+          <!-- Auto-fill button -->
+          <button class="suggest-btn" (click)="useSuggested()">↻ Auto-fill from filename</button>
+
+          <!-- Edit form: core fields -->
+          <div class="form-section-label">Core Tags</div>
+          <div class="edit-form">
+            <div class="form-group">
+              <label>Artist</label>
+              <input type="text" [ngModel]="artist()" (ngModelChange)="artist.set($event)" />
+            </div>
+            <div class="form-group">
+              <label>Title</label>
+              <input type="text" [ngModel]="title()" (ngModelChange)="title.set($event)" />
+            </div>
+            <div class="form-group">
+              <label>Album</label>
+              <input type="text" [ngModel]="album()" (ngModelChange)="album.set($event)" />
+            </div>
+            <div class="form-row">
+              <div class="form-group half">
+                <label>Year</label>
+                <input type="text" [ngModel]="year()" (ngModelChange)="year.set($event)" />
+              </div>
+              <div class="form-group half">
+                <label>Track #</label>
+                <input type="text" [ngModel]="trackNumber()" (ngModelChange)="trackNumber.set($event)" placeholder="e.g. 1/12" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group half">
+                <label>Genre</label>
+                <input type="text" [ngModel]="genre()" (ngModelChange)="genre.set($event)" placeholder="e.g. Hip-Hop" />
+              </div>
+              <div class="form-group half">
+                <label>Composer</label>
+                <input type="text" [ngModel]="composer()" (ngModelChange)="composer.set($event)" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Edit form: broadcast / promo fields -->
+          <div class="form-section-label">Broadcast & Promo</div>
+          <div class="edit-form">
+            <div class="form-group">
+              <label>Publisher / Label</label>
+              <input type="text" [ngModel]="publisher()" (ngModelChange)="publisher.set($event)" />
+            </div>
+            <div class="form-group">
+              <label>Radio Station URL</label>
+              <input type="text" [ngModel]="radioStationUrl()" (ngModelChange)="radioStationUrl.set($event)" placeholder="www.boombapboombox.com" />
+            </div>
+            <div class="form-group">
+              <label>Comment / Notes</label>
+              <textarea [ngModel]="comment()" (ngModelChange)="comment.set($event)" rows="3" placeholder="Free-text notes, promos, etc."></textarea>
+            </div>
+          </div>
+
+          <!-- Save button -->
+          <button
+            class="save-btn"
+            [class.saving]="isSaving()"
+            (click)="save()"
+          >
+            {{ isSaving() ? 'Saving...' : 'Save & Mark Tagged' }}
+          </button>
+
+        </div>
+      }
+    </div>
+  }
+</div>
+

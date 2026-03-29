@@ -10,13 +10,20 @@
   <!-- Header -->
   <header class="header">
     <img src="banner.png" alt="BeatARator" class="header-logo">
-    <button class="stats-toggle" (click)="toggleStats()">
-      {{ remainingCount() }} left
-    </button>
+    <!-- Mode toggle -->
+    <div class="mode-toggle">
+      <button class="mode-btn" [class.active]="appMode() === 'sort'" (click)="switchMode('sort')">🎵 Sort</button>
+      <button class="mode-btn" [class.active]="appMode() === 'tag'" (click)="switchMode('tag')">🏷️ Tag</button>
+    </div>
+    @if (appMode() === 'sort') {
+      <button class="stats-toggle" (click)="toggleStats()">
+        {{ remainingCount() }} left
+      </button>
+    }
   </header>
 
-  <!-- Stats panel -->
-  @if (showStats() && stats()) {
+  <!-- Stats panel (Sort mode only) -->
+  @if (appMode() === 'sort' && showStats() && stats()) {
     <div class="stats-panel">
       <div class="stat-row" [class.active-source]="playlistSource() === 'inbox'">
         <span class="stat-label">📥 Inbox</span>
@@ -97,7 +104,8 @@
     </div>
   }
 
-  <!-- Main content -->
+  <!-- Sort Mode -->
+  @if (appMode() === 'sort') {
   <main class="main">
     @if (isLoading()) {
       <div class="loading">Loading tracks...</div>
@@ -174,10 +182,16 @@
 
       <!-- Info message -->
       @if (playlistSource() === 'inbox') {
-        <div class="info-message">Rated tracks are removed from the playlist</div>
+        <div class="info-message">Rated tracks are removed from the main inbox playlist</div>
       } @else {
         <div class="info-message">Re-rate to move tracks between folders</div>
       }
     }
   </main>
+  }
+
+  <!-- Tag Mode -->
+  @if (appMode() === 'tag') {
+    <app-tag-mode></app-tag-mode>
+  }
 </div>

@@ -1,0 +1,462 @@
+.tag-container {
+  padding: 0 0 32px;
+  min-height: 60vh;
+}
+
+// Section styles
+.section-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 4px;
+}
+
+.section-hint {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 20px;
+}
+
+// Back button
+.back-btn {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-bottom: 12px;
+
+  &:active {
+    opacity: 0.7;
+  }
+}
+
+// Category picker
+.category-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.category-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e0e0e0;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+
+  &:active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .cat-emoji {
+    font-size: 28px;
+  }
+
+  .cat-label {
+    font-size: 16px;
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .cat-count {
+    font-size: 13px;
+    color: #888;
+  }
+
+  &[data-rating="Bad"] { border-left: 3px solid #ef4444; }
+  &[data-rating="OK"] { border-left: 3px solid #f59e0b; }
+  &[data-rating="Good"] { border-left: 3px solid #22c55e; }
+  &[data-rating="Real Good"] { border-left: 3px solid #3b82f6; }
+  &[data-rating="Banger"] { border-left: 3px solid #a855f7; }
+}
+
+// Track list view
+.list-header {
+  margin-bottom: 16px;
+}
+
+.tag-progress {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  margin-top: 4px;
+
+  .tagged-count {
+    color: #22c55e;
+  }
+
+  .divider {
+    color: #444;
+  }
+
+  .untagged-count {
+    color: #f59e0b;
+  }
+}
+
+.quick-actions {
+  margin-bottom: 12px;
+}
+
+.start-untagged-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px dashed rgba(102, 126, 234, 0.4);
+  background: rgba(102, 126, 234, 0.08);
+  color: #667eea;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:active {
+    background: rgba(102, 126, 234, 0.15);
+    transform: scale(0.98);
+  }
+}
+
+.track-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 50vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.track-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: none;
+  color: #ccc;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  transition: background 0.15s;
+
+  &:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  &.tagged {
+    opacity: 0.5;
+  }
+
+  .track-status {
+    font-size: 14px;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .track-filename {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &.tagged .track-status {
+    color: #22c55e;
+  }
+}
+
+// Editor view
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.save-message {
+  font-size: 13px;
+  font-weight: 600;
+  color: #22c55e;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.editor-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// Album art
+.art-section {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.art-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #1a1a2e;
+}
+
+.art-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  padding-top: 4px;
+
+  .art-found {
+    color: #22c55e;
+  }
+
+  .art-override {
+    color: #a855f7;
+  }
+
+  .art-missing {
+    color: #f59e0b;
+  }
+
+  .art-embedded {
+    color: #667eea;
+  }
+}
+
+.art-clear-btn {
+  background: none;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #a855f7;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  align-self: flex-start;
+
+  &:active {
+    background: rgba(168, 85, 247, 0.15);
+  }
+}
+
+// Image art picker
+.art-picker-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.art-picker-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+}
+
+.art-picker-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+
+  scrollbar-width: thin;
+  scrollbar-color: #444 transparent;
+}
+
+.art-thumb-btn {
+  flex-shrink: 0;
+  padding: 2px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &.selected {
+    border-color: #667eea;
+    box-shadow: 0 0 8px rgba(102, 126, 234, 0.5);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.art-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  object-fit: cover;
+  display: block;
+}
+
+// Embed toggle
+.embed-toggle {
+  label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #ccc;
+    cursor: pointer;
+  }
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #667eea;
+  }
+}
+
+// Section labels divider
+.form-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #555;
+  padding: 4px 0 2px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  margin-top: 4px;
+}
+
+// Suggest button
+.suggest-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #aaa;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  align-self: flex-start;
+
+  &:active {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+  }
+}
+
+// Edit form
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+  }
+
+  input[type="text"],
+  textarea {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+    resize: vertical;
+
+    &:focus {
+      border-color: #667eea;
+    }
+  }
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+
+  .half {
+    flex: 1;
+  }
+}
+
+.checkbox-group {
+  label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #ccc;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    cursor: pointer;
+  }
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #667eea;
+  }
+}
+
+// Save button
+.save-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &.saving {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+// Loading & empty
+.loading {
+  text-align: center;
+  font-size: 14px;
+  color: #888;
+  padding: 40px 0;
+}
+
+.empty-state {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  padding: 40px 0;
+}

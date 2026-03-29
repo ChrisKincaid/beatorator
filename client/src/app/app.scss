@@ -72,6 +72,37 @@
     object-fit: contain;
   }
 
+  .mode-toggle {
+    display: flex;
+    gap: 4px;
+    margin-top: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    padding: 3px;
+
+    .mode-btn {
+      background: none;
+      border: none;
+      color: #888;
+      padding: 6px 18px;
+      border-radius: 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &.active {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      }
+
+      &:not(.active):active {
+        background: rgba(255, 255, 255, 0.08);
+      }
+    }
+  }
+
   .stats-toggle {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);

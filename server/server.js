@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const NodeID3 = require('node-id3');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,10 +11,68 @@ const PORT = process.env.PORT || 3000;
 const AUDIO_DIR = path.join(__dirname, '..', 'audio');
 const INBOX_DIR = path.join(AUDIO_DIR, 'inbox');
 const RATED_DIR = path.join(AUDIO_DIR, 'rated');
+const IMAGES_DIR = path.join(INBOX_DIR, 'images');
 const CLIENT_DIST = path.join(__dirname, '..', 'client', 'dist', 'client', 'browser');
 
 const VALID_RATINGS = ['Bad', 'OK', 'Good', 'Real Good', 'Banger'];
 const AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.wma', '.opus']);
+const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp']);
+const DEFAULT_ART = 'BBBDefaultAlbumart.png';
+
+// Parse track filename: "Artist - Album - Track (Year).mp3"
+function parseTrackFilename(filename) {
+  const name = filename.replace(/\.[^/.]+$/, ''); // strip extension
+  // Match: Artist - Album - Track (Year) or Artist - Track (Year)
+  const matchFull = name.match(/^(.+?)\s*-\s*(.+?)\s*-\s*(.+?)\s*\((\d{4})\)$/);
+  if (matchFull) {
+    return { artist: matchFull[1].trim(), album: matchFull[2].trim(), title: matchFull[3].trim(), year: matchFull[4] };
+  }
+  // Match: Artist - Track (Year)
+  const matchSimple = name.match(/^(.+?)\s*-\s*(.+?)\s*\((\d{4})\)$/);
+  if (matchSimple) {
+    return { artist: matchSimple[1].trim(), album: '', title: matchSimple[2].trim(), year: matchSimple[3] };
+  }
+  return { artist: '', album: '', title: name, year: '' };
+}
+
+// Find matching album art image
+function findAlbumArt(filename) {
+  const parsed = parseTrackFilename(filename);
+  if (!fs.existsSync(IMAGES_DIR)) return null;
+
+  const images = fs.readdirSync(IMAGES_DIR)
+    .filter(f => IMAGE_EXTENSIONS.has(path.extname(f).toLowerCase()));
+
+  // Try to match album: "Artist - Album (Year).jpg"
+  if (parsed.album && parsed.year) {
+    const albumPattern = `${parsed.artist} - ${parsed.album} (${parsed.year})`.toLowerCase();
+    const match = images.find(img => {
+      const imgName = img.replace(/\.[^/.]+$/, '').toLowerCase();
+      return imgName === albumPattern;
+    });
+    if (match) return match;
+  }
+
+  // Try partial match on artist + album
+  if (parsed.album) {
+    const match = images.find(img => {
+      const imgName = img.replace(/\.[^/.]+$/, '').toLowerCase();
+      return imgName.includes(parsed.artist.toLowerCase()) && imgName.includes(parsed.album.toLowerCase());
+    });
+    if (match) return match;
+  }
+
+  // Try artist-only match for singles
+  if (parsed.artist) {
+    const match = images.find(img => {
+      const imgName = img.replace(/\.[^/.]+$/, '').toLowerCase();
+      return imgName.includes(parsed.artist.toLowerCase()) && imgName.includes(parsed.title.toLowerCase());
+    });
+    if (match) return match;
+  }
+
+  return null;
+}
 
 // Middleware
 app.use(cors());
@@ -300,6 +359,198 @@ app.post('/api/rated/:rating/tracks/:filename/rate', (req, res) => {
     console.error('Error re-rating track:', err);
     res.status(500).json({ error: 'Failed to re-rate track' });
   }
+});
+
+// --- Metadata / Tag Mode Routes ---
+
+// GET /api/images - List all available album art images
+app.get('/api/images', (req, res) => {
+  try {
+    if (!fs.existsSync(IMAGES_DIR)) return res.json([]);
+    const images = fs.readdirSync(IMAGES_DIR)
+      .filter(f => IMAGE_EXTENSIONS.has(path.extname(f).toLowerCase()))
+      .sort();
+    res.json(images);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to list images' });
+  }
+});
+
+// GET /api/images/:filename - Serve album art images
+app.get('/api/images/:filename', (req, res) => {
+  const filename = req.params.filename;
+  if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    return res.status(400).json({ error: 'Invalid filename' });
+  }
+
+  const filePath = path.join(IMAGES_DIR, filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Image not found' });
+  }
+  res.sendFile(filePath);
+});
+
+// GET /api/rated/:rating/tracks/:filename/metadata - Read metadata + find album art
+app.get('/api/rated/:rating/tracks/:filename/metadata', (req, res) => {
+  const { rating, filename } = req.params;
+  if (!VALID_RATINGS.includes(rating)) {
+    return res.status(400).json({ error: 'Invalid rating' });
+  }
+  if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    return res.status(400).json({ error: 'Invalid filename' });
+  }
+
+  const filePath = path.join(RATED_DIR, rating, filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Track not found' });
+  }
+
+  try {
+    const tags = NodeID3.read(filePath);
+    const parsed = parseTrackFilename(filename);
+    const artImage = findAlbumArt(filename);
+
+    // Extract URL tags
+    const urlTags = tags.userDefinedUrl || [];
+    const radioUrl = (urlTags.find(u => u.description === 'RADIO_STATION_URL') || {}).url || '';
+
+    res.json({
+      current: {
+        artist: tags.artist || '',
+        title: tags.title || '',
+        album: tags.album || '',
+        year: tags.year || '',
+        genre: tags.genre || '',
+        trackNumber: tags.trackNumber || '',
+        composer: tags.composer || '',
+        publisher: tags.publisher || '',
+        comment: (tags.comment && tags.comment.text) ? tags.comment.text : '',
+        radioStationUrl: radioUrl,
+        hasEmbeddedArt: !!(tags.image && tags.image.imageBuffer)
+      },
+      suggested: {
+        artist: parsed.artist,
+        title: parsed.title,
+        album: parsed.album,
+        year: parsed.year,
+        genre: '',
+        trackNumber: '',
+        composer: '',
+        publisher: '',
+        comment: '',
+        radioStationUrl: 'www.boombapboombox.com'
+      },
+      albumArt: artImage,
+      defaultArt: DEFAULT_ART
+    });
+  } catch (err) {
+    console.error('Error reading metadata:', err);
+    res.status(500).json({ error: 'Failed to read metadata' });
+  }
+});
+
+// POST /api/rated/:rating/tracks/:filename/metadata - Write metadata + embed album art
+app.post('/api/rated/:rating/tracks/:filename/metadata', (req, res) => {
+  const { rating, filename } = req.params;
+  if (!VALID_RATINGS.includes(rating)) {
+    return res.status(400).json({ error: 'Invalid rating' });
+  }
+  if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    return res.status(400).json({ error: 'Invalid filename' });
+  }
+
+  const filePath = path.join(RATED_DIR, rating, filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Track not found' });
+  }
+
+  const { artist, title, album, year, genre, trackNumber, composer, publisher, comment, radioStationUrl, embedArt, artFilename } = req.body;
+
+  // Validate artFilename if provided
+  if (artFilename && (artFilename.includes('..') || artFilename.includes('/') || artFilename.includes('\\'))) {
+    return res.status(400).json({ error: 'Invalid art filename' });
+  }
+
+  try {
+    const tags = {
+      artist: artist || '',
+      title: title || '',
+      album: album || '',
+      year: year || '',
+      genre: genre || '',
+      trackNumber: trackNumber || '',
+      composer: composer || '',
+      publisher: publisher || ''
+    };
+
+    // Comment tag
+    if (comment) {
+      tags.comment = { language: 'eng', shortText: '', text: comment };
+    }
+
+    // Radio station URL stored as user-defined URL
+    if (radioStationUrl) {
+      tags.userDefinedUrl = [{ description: 'RADIO_STATION_URL', url: radioStationUrl }];
+    }
+
+    // Embed album art if requested
+    if (embedArt) {
+      // Use explicitly chosen art, then auto-detected, then default
+      let artFile = null;
+      if (artFilename) {
+        artFile = artFilename;
+      } else {
+        artFile = findAlbumArt(filename) || DEFAULT_ART;
+      }
+      const artPath = path.join(IMAGES_DIR, artFile);
+      if (fs.existsSync(artPath)) {
+        const ext = path.extname(artFile).toLowerCase();
+        const mimeMap = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp' };
+        tags.image = {
+          mime: mimeMap[ext] || 'image/jpeg',
+          type: { id: 3, name: 'front cover' },
+          description: 'Album Art',
+          imageBuffer: fs.readFileSync(artPath)
+        };
+      }
+    }
+
+    const success = NodeID3.update(tags, filePath);
+    if (!success) {
+      return res.status(500).json({ error: 'Failed to write tags' });
+    }
+
+    // Update .tagged.json manifest
+    const taggedPath = path.join(RATED_DIR, rating, '.tagged.json');
+    let tagged = [];
+    if (fs.existsSync(taggedPath)) {
+      try { tagged = JSON.parse(fs.readFileSync(taggedPath, 'utf8')); } catch { tagged = []; }
+    }
+    if (!tagged.includes(filename)) {
+      tagged.push(filename);
+    }
+    fs.writeFileSync(taggedPath, JSON.stringify(tagged, null, 2));
+
+    res.json({ success: true, tagged: tagged.length });
+  } catch (err) {
+    console.error('Error writing metadata:', err);
+    res.status(500).json({ error: 'Failed to write metadata' });
+  }
+});
+
+// GET /api/rated/:rating/tagged - Get the tagged manifest
+app.get('/api/rated/:rating/tagged', (req, res) => {
+  const { rating } = req.params;
+  if (!VALID_RATINGS.includes(rating)) {
+    return res.status(400).json({ error: 'Invalid rating' });
+  }
+
+  const taggedPath = path.join(RATED_DIR, rating, '.tagged.json');
+  let tagged = [];
+  if (fs.existsSync(taggedPath)) {
+    try { tagged = JSON.parse(fs.readFileSync(taggedPath, 'utf8')); } catch { tagged = []; }
+  }
+  res.json(tagged);
 });
 
 // GET /api/stats - Get counts per rating folder
