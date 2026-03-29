@@ -1,0 +1,85 @@
+<div class="export-container">
+  <h2 class="section-title">Export Library</h2>
+  <p class="section-desc">
+    Converts all rated tracks to 192kbps MP3 for Live365 streaming.<br>
+    Output goes to <code>audio/export/</code> — originals are never touched.
+  </p>
+
+  <!-- ffmpeg check -->
+  @if (ffmpegAvailable() === null) {
+    <div class="check-row">
+      <span class="check-spinner">⏳</span> Checking for ffmpeg...
+    </div>
+  } @else if (!ffmpegAvailable()) {
+    <div class="ffmpeg-missing">
+      <span class="warn-icon">⚠️</span>
+      <div>
+        <strong>ffmpeg not found.</strong><br>
+        Download and install it from <strong>ffmpeg.org</strong>, then restart the server.
+      </div>
+    </div>
+  } @else {
+    <div class="ffmpeg-ok">✓ ffmpeg detected</div>
+
+    <!-- Idle state -->
+    @if (exportState() === 'idle') {
+      <button class="export-btn" (click)="startExport()">
+        📤 Export All Rated Tracks to 192kbps
+      </button>
+      <p class="export-note">
+        This will process every track in Bad, OK, Good, Real Good, and Banger folders.
+        Existing files in <code>audio/export/</code> will be overwritten.
+      </p>
+    }
+
+    <!-- Running state -->
+    @if (exportState() === 'running') {
+      <div class="running-section">
+        <div class="running-label">
+          @if (status()) {
+            Converting {{ status()!.done }} of {{ status()!.total }} tracks...
+          } @else {
+            Starting export...
+          }
+        </div>
+        @if (status() && status()!.total > 0) {
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" [style.width.%]="progressPercent()"></div>
+          </div>
+          <div class="progress-pct">{{ progressPercent() }}%</div>
+        }
+        <p class="running-note">This may take several minutes for large libraries. You can safely leave this screen.</p>
+      </div>
+    }
+
+    <!-- Done state -->
+    @if (exportState() === 'done') {
+      <div class="result-section success">
+        <div class="result-icon">✅</div>
+        <div class="result-text">
+          <strong>Export complete!</strong><br>
+          {{ status()!.success }} tracks exported to <code>audio/export/</code>
+        </div>
+        <button class="reset-btn" (click)="reset()">Export Again</button>
+      </div>
+    }
+
+    <!-- Error / partial state -->
+    @if (exportState() === 'error') {
+      <div class="result-section partial">
+        <div class="result-icon">⚠️</div>
+        <div class="result-text">
+          <strong>{{ status()!.success }} converted, {{ status()!.failed }} failed</strong>
+        </div>
+        @if (status()!.errors.length > 0) {
+          <div class="error-list">
+            @for (e of status()!.errors; track e) {
+              <div class="error-item">{{ e }}</div>
+            }
+          </div>
+        }
+        <button class="reset-btn" (click)="reset()">Try Again</button>
+      </div>
+    }
+  }
+</div>

@@ -14,6 +14,7 @@
     <div class="mode-toggle">
       <button class="mode-btn" [class.active]="appMode() === 'sort'" (click)="switchMode('sort')">🎵 Sort</button>
       <button class="mode-btn" [class.active]="appMode() === 'tag'" (click)="switchMode('tag')">🏷️ Tag</button>
+      <button class="mode-btn" [class.active]="appMode() === 'export'" (click)="switchMode('export')">📤 Export</button>
     </div>
     @if (appMode() === 'sort') {
       <button class="stats-toggle" (click)="toggleStats()">
@@ -193,5 +194,10 @@
   <!-- Tag Mode -->
   @if (appMode() === 'tag') {
     <app-tag-mode></app-tag-mode>
+  }
+
+  <!-- Export Mode -->
+  @if (appMode() === 'export') {
+    <app-export-mode></app-export-mode>
   }
 </div>

@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const { execFile, exec } = require('child_process');
 const NodeID3 = require('node-id3');
 
 const app = express();
@@ -13,6 +14,8 @@ const INBOX_DIR = path.join(AUDIO_DIR, 'inbox');
 const RATED_DIR = path.join(AUDIO_DIR, 'rated');
 const IMAGES_DIR = path.join(INBOX_DIR, 'images');
 const CLIENT_DIST = path.join(__dirname, '..', 'client', 'dist', 'client', 'browser');
+
+const EXPORT_DIR = path.join(AUDIO_DIR, 'export');
 
 const VALID_RATINGS = ['Bad', 'OK', 'Good', 'Real Good', 'Banger'];
 const AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.wma', '.opus']);
@@ -579,6 +582,87 @@ app.get('/api/stats', (req, res) => {
     res.status(500).json({ error: 'Failed to get stats' });
   }
 });
+
+// --- Export endpoints ---
+
+// Shared export job state (in-memory, one job at a time)
+let exportJob = { running: false, total: 0, done: 0, success: 0, failed: 0, errors: [], finished: false };
+
+// GET /api/export/check - confirm ffmpeg is installed
+app.get('/api/export/check', (req, res) => {
+  exec('ffmpeg -version', (error) => {
+    res.json({ available: !error });
+  });
+});
+
+// GET /api/export/status - poll progress during a running job
+app.get('/api/export/status', (req, res) => {
+  res.json({ ...exportJob });
+});
+
+// POST /api/export - kick off async export job
+app.post('/api/export', (req, res) => {
+  if (exportJob.running) {
+    return res.status(409).json({ error: 'Export already running' });
+  }
+  exportJob = { running: true, total: 0, done: 0, success: 0, failed: 0, errors: [], finished: false };
+  runExport().catch(err => {
+    exportJob.running = false;
+    exportJob.finished = true;
+    exportJob.errors.push(err.message);
+  });
+  res.json({ started: true });
+});
+
+async function runExport() {
+  // Ensure export subdirs exist
+  for (const rating of VALID_RATINGS) {
+    const dir = path.join(EXPORT_DIR, rating);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  }
+
+  // Collect all MP3s across all rated folders
+  const jobs = [];
+  for (const rating of VALID_RATINGS) {
+    const ratedDir = path.join(RATED_DIR, rating);
+    if (!fs.existsSync(ratedDir)) continue;
+    const files = fs.readdirSync(ratedDir)
+      .filter(f => path.extname(f).toLowerCase() === '.mp3');
+    for (const file of files) jobs.push({ rating, file });
+  }
+  exportJob.total = jobs.length;
+
+  // Process in batches of 3 in parallel
+  const CONCURRENCY = 3;
+  for (let i = 0; i < jobs.length; i += CONCURRENCY) {
+    const batch = jobs.slice(i, i + CONCURRENCY);
+    await Promise.all(batch.map(({ rating, file }) => new Promise(resolve => {
+      const input = path.join(RATED_DIR, rating, file);
+      const output = path.join(EXPORT_DIR, rating, file);
+      execFile('ffmpeg', [
+        '-i', input,
+        '-codec:a', 'libmp3lame',
+        '-b:a', '192k',
+        '-y',
+        output
+      ], (err) => {
+        exportJob.done++;
+        if (err) {
+          exportJob.failed++;
+          // Trim ffmpeg's verbose error to just the first line
+          const msg = (err.message || '').split('\n')[0].slice(0, 120);
+          exportJob.errors.push(`${rating}/${file}: ${msg}`);
+        } else {
+          exportJob.success++;
+        }
+        resolve();
+      });
+    })));
+  }
+
+  exportJob.running = false;
+  exportJob.finished = true;
+}
 
 // SPA fallback - serve Angular index.html for all other routes
 app.get('*', (req, res) => {

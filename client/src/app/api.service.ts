@@ -69,6 +69,16 @@ export interface MetadataSaveRequest {
   artFilename: string | null;
 }
 
+export interface ExportStatus {
+  running: boolean;
+  total: number;
+  done: number;
+  success: number;
+  failed: number;
+  errors: string[];
+  finished: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private baseUrl = '/api';
@@ -132,5 +142,17 @@ export class ApiService {
 
   getImageUrl(filename: string): string {
     return `${this.baseUrl}/images/${encodeURIComponent(filename)}`;
+  }
+
+  checkFfmpeg(): Observable<{ available: boolean }> {
+    return this.http.get<{ available: boolean }>(`${this.baseUrl}/export/check`);
+  }
+
+  startExport(): Observable<{ started: boolean }> {
+    return this.http.post<{ started: boolean }>(`${this.baseUrl}/export`, {});
+  }
+
+  getExportStatus(): Observable<ExportStatus> {
+    return this.http.get<ExportStatus>(`${this.baseUrl}/export/status`);
   }
 }

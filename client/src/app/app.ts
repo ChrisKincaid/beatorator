@@ -2,15 +2,16 @@ import { Component, signal, computed, OnInit, ViewChild, ElementRef } from '@ang
 import { CommonModule } from '@angular/common';
 import { ApiService, Track, Stats } from './api.service';
 import { TagMode } from './tag-mode/tag-mode';
+import { ExportMode } from './export-mode/export-mode';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, TagMode],
+  imports: [CommonModule, TagMode, ExportMode],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
 export class App implements OnInit {
-  appMode = signal<'sort' | 'tag'>('sort');
+  appMode = signal<'sort' | 'tag' | 'export'>('sort');
   tracks = signal<Track[]>([]);
   currentIndex = signal(0);
   stats = signal<Stats | null>(null);
@@ -73,8 +74,8 @@ export class App implements OnInit {
     this.loadTracks();
   }
 
-  switchMode(mode: 'sort' | 'tag') {
-    if (mode === 'tag') {
+  switchMode(mode: 'sort' | 'tag' | 'export') {
+    if (mode !== 'sort') {
       const audio = this.audioRef?.nativeElement;
       if (audio) {
         audio.pause();
