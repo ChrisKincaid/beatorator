@@ -21,6 +21,7 @@ export class App implements OnInit {
   ratingFeedback = signal<string | null>(null);
   loopMode = signal(false);
   skippedBack = signal(false);
+  playlistSource = signal<string>('inbox'); // 'inbox' or a rating name like 'Banger'
 
   currentTrack = computed(() => {
     const t = this.tracks();
@@ -39,7 +40,12 @@ export class App implements OnInit {
 
   streamUrl = computed(() => {
     const track = this.currentTrack();
-    return track ? this.api.getStreamUrl(track.filename) : '';
+    if (!track) return '';
+    const source = this.playlistSource();
+    if (source === 'inbox') {
+      return this.api.getStreamUrl(track.filename);
+    }
+    return this.api.getRatedStreamUrl(source, track.filename);
   });
 
   progress = computed(() => {
@@ -67,6 +73,7 @@ export class App implements OnInit {
 
   loadTracks() {
     this.isLoading.set(true);
+    this.playlistSource.set('inbox');
     this.api.getTracks().subscribe({
       next: (tracks) => {
         // Shuffle for random playback
@@ -82,6 +89,31 @@ export class App implements OnInit {
     });
     this.api.getStats().subscribe({
       next: (stats) => this.stats.set(stats)
+    });
+  }
+
+  loadRatedTracks(rating: string) {
+    const audio = this.audioRef?.nativeElement;
+    if (audio) {
+      audio.pause();
+      this.isPlaying.set(false);
+    }
+
+    this.isLoading.set(true);
+    this.playlistSource.set(rating);
+    this.api.getRatedTracks(rating).subscribe({
+      next: (tracks) => {
+        for (let i = tracks.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [tracks[i], tracks[j]] = [tracks[j], tracks[i]];
+        }
+        this.tracks.set(tracks);
+        this.currentIndex.set(0);
+        this.isLoading.set(false);
+        this.showStats.set(false);
+        this.autoPlayCurrent();
+      },
+      error: () => this.isLoading.set(false)
     });
   }
 
@@ -173,6 +205,11 @@ export class App implements OnInit {
     const track = this.currentTrack();
     if (!track || this.isRating()) return;
 
+    const source = this.playlistSource();
+
+    // If re-rating to the same folder, skip (no-op)
+    if (source !== 'inbox' && source === rating) return;
+
     this.isRating.set(true);
     this.ratingFeedback.set(rating);
 
@@ -182,7 +219,11 @@ export class App implements OnInit {
       this.isPlaying.set(false);
     }
 
-    this.api.rateTrack(track.filename, rating).subscribe({
+    const rateObs = source === 'inbox'
+      ? this.api.rateTrack(track.filename, rating)
+      : this.api.reRateTrack(source, track.filename, rating);
+
+    rateObs.subscribe({
       next: () => {
         // Remove the rated track from the list
         const updated = this.tracks().filter((_, i) => i !== this.currentIndex());

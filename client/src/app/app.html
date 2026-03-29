@@ -18,29 +18,81 @@
   <!-- Stats panel -->
   @if (showStats() && stats()) {
     <div class="stats-panel">
-      <div class="stat-row">
+      <div class="stat-row" [class.active-source]="playlistSource() === 'inbox'">
         <span class="stat-label">📥 Inbox</span>
-        <span class="stat-value">{{ stats()!.inbox }}</span>
+        <div class="stat-actions">
+          <span class="stat-value">{{ stats()!.inbox }}</span>
+          @if (playlistSource() !== 'inbox') {
+            <button class="stat-play-btn" (click)="loadTracks()">▶</button>
+          } @else {
+            <span class="stat-now-playing">♪</span>
+          }
+        </div>
       </div>
-      <div class="stat-row">
+      <div class="stat-row" [class.active-source]="playlistSource() === 'Bad'">
         <span class="stat-label">👎 Bad</span>
-        <span class="stat-value">{{ stats()!.Bad }}</span>
+        <div class="stat-actions">
+          <span class="stat-value">{{ stats()!.Bad }}</span>
+          @if (stats()!.Bad > 0) {
+            @if (playlistSource() === 'Bad') {
+              <span class="stat-now-playing">♪</span>
+            } @else {
+              <button class="stat-play-btn" (click)="loadRatedTracks('Bad')">▶</button>
+            }
+          }
+        </div>
       </div>
-      <div class="stat-row">
+      <div class="stat-row" [class.active-source]="playlistSource() === 'OK'">
         <span class="stat-label">😐 OK</span>
-        <span class="stat-value">{{ stats()!.OK }}</span>
+        <div class="stat-actions">
+          <span class="stat-value">{{ stats()!.OK }}</span>
+          @if (stats()!.OK > 0) {
+            @if (playlistSource() === 'OK') {
+              <span class="stat-now-playing">♪</span>
+            } @else {
+              <button class="stat-play-btn" (click)="loadRatedTracks('OK')">▶</button>
+            }
+          }
+        </div>
       </div>
-      <div class="stat-row">
+      <div class="stat-row" [class.active-source]="playlistSource() === 'Good'">
         <span class="stat-label">👍 Good</span>
-        <span class="stat-value">{{ stats()!.Good }}</span>
+        <div class="stat-actions">
+          <span class="stat-value">{{ stats()!.Good }}</span>
+          @if (stats()!.Good > 0) {
+            @if (playlistSource() === 'Good') {
+              <span class="stat-now-playing">♪</span>
+            } @else {
+              <button class="stat-play-btn" (click)="loadRatedTracks('Good')">▶</button>
+            }
+          }
+        </div>
       </div>
-      <div class="stat-row">
+      <div class="stat-row" [class.active-source]="playlistSource() === 'Real Good'">
         <span class="stat-label">🔥 Real Good</span>
-        <span class="stat-value">{{ stats()!['Real Good'] }}</span>
+        <div class="stat-actions">
+          <span class="stat-value">{{ stats()!['Real Good'] }}</span>
+          @if (stats()!['Real Good'] > 0) {
+            @if (playlistSource() === 'Real Good') {
+              <span class="stat-now-playing">♪</span>
+            } @else {
+              <button class="stat-play-btn" (click)="loadRatedTracks('Real Good')">▶</button>
+            }
+          }
+        </div>
       </div>
-      <div class="stat-row">
+      <div class="stat-row" [class.active-source]="playlistSource() === 'Banger'">
         <span class="stat-label">💥 Banger</span>
-        <span class="stat-value">{{ stats()!.Banger }}</span>
+        <div class="stat-actions">
+          <span class="stat-value">{{ stats()!.Banger }}</span>
+          @if (stats()!.Banger > 0) {
+            @if (playlistSource() === 'Banger') {
+              <span class="stat-now-playing">♪</span>
+            } @else {
+              <button class="stat-play-btn" (click)="loadRatedTracks('Banger')">▶</button>
+            }
+          }
+        </div>
       </div>
     </div>
   }
@@ -57,6 +109,14 @@
         <button class="refresh-btn" (click)="loadTracks()">Refresh</button>
       </div>
     } @else {
+      <!-- Source indicator -->
+      @if (playlistSource() !== 'inbox') {
+        <div class="source-indicator">
+          <span>Playing from: {{ ratingEmojis[playlistSource()] }} {{ playlistSource() }}</span>
+          <button class="back-to-inbox-btn" (click)="loadTracks()">📥 Back to Inbox</button>
+        </div>
+      }
+
       <!-- Track info -->
       <div class="track-info">
         <div class="track-name">{{ trackName() }}</div>
@@ -101,7 +161,8 @@
         @for (r of ratings; track r) {
           <button
             class="rating-btn"
-            [class.disabled]="isRating()"
+            [class.disabled]="isRating() || (playlistSource() !== 'inbox' && playlistSource() === r)"
+            [class.current-rating]="playlistSource() === r"
             [attr.data-rating]="r"
             (click)="rate(r)"
           >
@@ -112,7 +173,11 @@
       </div>
 
       <!-- Info message -->
-      <div class="info-message">Rated tracks are removed from the playlist</div>
+      @if (playlistSource() === 'inbox') {
+        <div class="info-message">Rated tracks are removed from the playlist</div>
+      } @else {
+        <div class="info-message">Re-rate to move tracks between folders</div>
+      }
     }
   </main>
 </div>
