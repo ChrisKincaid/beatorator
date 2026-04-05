@@ -22,18 +22,23 @@ const AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp']);
 const DEFAULT_ART = 'BBBDefaultAlbumart.png';
 
+// Strip YouTube Music " - Topic" suffix from artist names
+function cleanArtist(name) {
+  return name.replace(/\s*-\s*Topic$/i, '').trim();
+}
+
 // Parse track filename: "Artist - Album - Track (Year).mp3"
 function parseTrackFilename(filename) {
   const name = filename.replace(/\.[^/.]+$/, ''); // strip extension
   // Match: Artist - Album - Track (Year) or Artist - Track (Year)
   const matchFull = name.match(/^(.+?)\s*-\s*(.+?)\s*-\s*(.+?)\s*\((\d{4})\)$/);
   if (matchFull) {
-    return { artist: matchFull[1].trim(), album: matchFull[2].trim(), title: matchFull[3].trim(), year: matchFull[4] };
+    return { artist: cleanArtist(matchFull[1].trim()), album: matchFull[2].trim(), title: matchFull[3].trim(), year: matchFull[4] };
   }
   // Match: Artist - Track (Year)
   const matchSimple = name.match(/^(.+?)\s*-\s*(.+?)\s*\((\d{4})\)$/);
   if (matchSimple) {
-    return { artist: matchSimple[1].trim(), album: '', title: matchSimple[2].trim(), year: matchSimple[3] };
+    return { artist: cleanArtist(matchSimple[1].trim()), album: '', title: matchSimple[2].trim(), year: matchSimple[3] };
   }
   return { artist: '', album: '', title: name, year: '' };
 }
@@ -444,7 +449,7 @@ app.get('/api/rated/:rating/tracks/:filename/metadata', (req, res) => {
 
     res.json({
       current: {
-        artist: tags.artist || '',
+        artist: cleanArtist(tags.artist || ''),
         title: tags.title || '',
         album: tags.album || '',
         year: tags.year || '',
