@@ -1,4 +1,4 @@
-import { Component, signal, computed, OnInit } from '@angular/core';
+import { Component, signal, computed, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, Track, TrackMetadata, Stats } from '../api.service';
@@ -20,6 +20,57 @@ export class TagMode implements OnInit {
   isSaving = signal(false);
   saveMessage = signal<string | null>(null);
   availableImages = signal<string[]>([]);
+
+  // Audio player
+  @ViewChild('tagAudio') audioRef!: ElementRef<HTMLAudioElement>;
+  isPlaying = signal(false);
+  currentTime = signal(0);
+  duration = signal(0);
+
+  audioSrc = computed(() => {
+    const track = this.selectedTrack();
+    const rating = this.selectedRating();
+    if (!track || !rating) return '';
+    return this.api.getRatedStreamUrl(rating, track.filename);
+  });
+
+  formatTime(seconds: number): string {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  togglePlay() {
+    const audio = this.audioRef?.nativeElement;
+    if (!audio) return;
+    if (audio.paused) { audio.play(); } else { audio.pause(); }
+  }
+
+  onTimeUpdate() {
+    this.currentTime.set(this.audioRef.nativeElement.currentTime);
+  }
+
+  onLoadedMetadata() {
+    this.duration.set(this.audioRef.nativeElement.duration);
+  }
+
+  onEnded() {
+    this.isPlaying.set(false);
+    this.currentTime.set(0);
+  }
+
+  onPlayPauseChange(playing: boolean) {
+    this.isPlaying.set(playing);
+  }
+
+  seek(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const audio = this.audioRef?.nativeElement;
+    if (audio && audio.duration) {
+      audio.currentTime = (parseFloat(input.value) / 100) * audio.duration;
+    }
+  }
 
   // Editable form fields
   artist = signal('');
@@ -109,6 +160,9 @@ export class TagMode implements OnInit {
     this.isLoading.set(true);
     this.saveMessage.set(null);
     this.selectedArtFilename.set(null);
+    this.isPlaying.set(false);
+    this.currentTime.set(0);
+    this.duration.set(0);
 
     this.api.getTrackMetadata(rating, track.filename).subscribe({
       next: (meta) => {

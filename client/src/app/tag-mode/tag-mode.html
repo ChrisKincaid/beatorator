@@ -70,6 +70,37 @@
       } @else if (metadata()) {
         <div class="editor-content">
 
+          <!-- Filename display -->
+          <div class="filename-bar">
+            <span class="filename-label">File:</span>
+            <span class="filename-value">{{ selectedTrack()!.filename }}</span>
+          </div>
+
+          <!-- Audio player -->
+          <audio
+            #tagAudio
+            [src]="audioSrc()"
+            (timeupdate)="onTimeUpdate()"
+            (loadedmetadata)="onLoadedMetadata()"
+            (play)="onPlayPauseChange(true)"
+            (pause)="onPlayPauseChange(false)"
+            (ended)="onEnded()"
+          ></audio>
+          <div class="tag-player">
+            <button class="play-btn" (click)="togglePlay()">
+              {{ isPlaying() ? '⏸' : '▶' }}
+            </button>
+            <span class="time-current">{{ formatTime(currentTime()) }}</span>
+            <input
+              type="range"
+              class="seek-bar"
+              min="0" max="100"
+              [value]="duration() > 0 ? (currentTime() / duration()) * 100 : 0"
+              (input)="seek($event)"
+            />
+            <span class="time-duration">{{ formatTime(duration()) }}</span>
+          </div>
+
           <!-- Album art section -->
           <div class="art-compare">
             <!-- Left: what is currently embedded in the file -->
