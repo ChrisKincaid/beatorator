@@ -70,12 +70,6 @@
       } @else if (metadata()) {
         <div class="editor-content">
 
-          <!-- Filename display -->
-          <div class="filename-bar">
-            <span class="filename-label">File:</span>
-            <span class="filename-value">{{ selectedTrack()!.filename }}</span>
-          </div>
-
           <!-- Audio player -->
           <audio
             #tagAudio
@@ -163,6 +157,12 @@
 
           <!-- Auto-fill button -->
           <button class="suggest-btn" (click)="useSuggested()">↻ Auto-fill from filename</button>
+
+          <!-- Filename display (next to fields for easy reference) -->
+          <div class="filename-bar">
+            <span class="filename-label">File:</span>
+            <span class="filename-value">{{ selectedTrack()!.filename }}</span>
+          </div>
 
           <!-- Edit form: core fields -->
           <div class="form-section-label">Core Tags</div>
